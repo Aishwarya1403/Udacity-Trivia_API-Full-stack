@@ -89,6 +89,92 @@ GET '/categories'
 
 ```
 
+API ENDPOINTS
+
+GET '/categories'
+- Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
+- Request Arguments: None
+- Returns: An object with a single key, categories, that contains a object of id: category_string key:value pairs. 
+{'1' : "Science",
+'2' : "Art",
+'3' : "Geography",
+'4' : "History",
+'5' : "Entertainment",
+'6' : "Sports"}
+
+GET '/questions'
+-  Fetches a dictionary of :
+        - categories in which the keys are the ids and the value is the corresponding string of the category.
+        - questions in which  the keys are the 'answer', 'category', 'id', and 'question'.
+- Request Arguments: None
+- Returns: List of categories and questions, along with total number of questions.
+- Example response:
+    { "categories": { "1": "Science", "2": "Art", "3": "Geography", "4": "History", "5": "Entertainment", "6": "Sports" }, "questions": [ { "answer": "Maya Angelou", "category": 4, "difficulty": 2, "id": 5, "question": "Whose autobiography is entitled 'I Know Why the Caged Bird Sings'?" }, { "answer": "Muhammad Ali", "category": 4, "difficulty": 1, "id": 9, "question": "What boxer's original name is Cassius Clay?" }, { "answer": "Apollo 13", "category": 5, "difficulty": 4, "id": 2, "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?" }, { "answer": "Tom Cruise", "category": 5, "difficulty": 4, "id": 4, "question": "What actor did author Anne Rice first denounce, then praise in the role of her beloved Lestat?" }, { "answer": "Edward Scissorhands", "category": 5, "difficulty": 3, "id": 6, "question": "What was the title of the 1990 fantasy directed by Tim Burton about a young man with multi-bladed appendages?" }, { "answer": "Brazil", "category": 6, "difficulty": 3, "id": 10, "question": "Which is the only team to play in every soccer World Cup tournament?" }, { "answer": "Uruguay", "category": 6, "difficulty": 4, "id": 11, "question": "Which country won the first ever soccer World Cup in 1930?" }, { "answer": "George Washington Carver", "category": 4, "difficulty": 2, "id": 12, "question": "Who invented Peanut Butter?" }, { "answer": "Lake Victoria", "category": 3, "difficulty": 2, "id": 13, "question": "What is the largest lake in Africa?" }, { "answer": "The Palace of Versailles", "category": 3, "difficulty": 3, "id": 14, "question": "In which royal palace would you find the Hall of Mirrors?" } ], "success": true, "total_questions": 38 }
+
+DELETE '/questions/<int id>'
+- Deletes a question from the list of questions (including all the categories).
+- Request Argument: question's id
+- Response: 'True' alond with 'id' of the deleted question, if the deletion is successful.
+
+POST '/questions'
+- Adds a new question to the existing ones.
+- Request Body :
+        - question
+        - answer
+        - category 
+        - difficulty
+- Response : True, if the question is successfully added to the list.
+
+
+POST '/search'
+- Fetches the list of all the questions consisting of the search phrase (request phrase).
+- Request Argument: None
+- Request Body : search_Term (phrase to be searched).
+- Response: Returns the questions, total number of questions and True if successful.
+- Example 
+  Request:
+       search={
+            'term':'Tom'
+         }
+
+GET '/categories/<int id>/questions'
+- Fetches the list of questions from a particular category.
+- Request Argument: id (of the category)
+- Response : Returns all the questions of the category of the provided id and True if the category exists.
+- Example 
+  Request: 
+     '/categories/1/questions' (1 for Science category)
+
+POST '/play'
+- Fetches the categories along with an ALL option.
+- Request Argument: None
+- Request Body: previous questions (array) and id of the quiz category.
+- Response: Returns the question corresponding to the provided category along with 'answer', 'category', 'difficulty',  'id', and "success" as True (for successful requests).
+- Example:
+    Request:
+        {
+            "previous_questions":[],
+            "quiz_category":{
+                "type":"History",
+                "id":4
+                }
+        }
+    Response:
+        {
+            "question": {
+                "answer": "Muhammad Ali",
+                "category": 4,
+                "difficulty": 1,
+                "id": 9,
+                "question": "What boxer's original name is Cassius Clay?"
+                },
+            "success": true
+        }
+        
+
+-
+
+
 
 ## Testing
 To run the tests, run
