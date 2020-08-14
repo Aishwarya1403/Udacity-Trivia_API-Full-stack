@@ -49,21 +49,6 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"],True)
         self.assertTrue(len(data["questions"]))
 
-    def test_deletion(self):
-        res=self.client().delete('/questions/5')
-        data=json.loads(res.data)
-
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(data["success"], True)
-
-    def test_422_deletion(self):
-        res=self.client().delete('/questions/1000')
-        data=json.loads(res.data)
-
-        self.assertEqual(res.status_code,422)
-        self.assertEqual(data["success"], False)
-        self.assertEqual(data["message"], "Unprocessable Entity")
-
     def test_post_questions(self):
         new_ques={
             'question':'xyz',
@@ -75,21 +60,38 @@ class TriviaTestCase(unittest.TestCase):
         data=json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
-        self.asserEqual(data["success"], True)
+        self.assertEqual(data["success"], True)
 
     def test_422_post_questions(self):
         new_ques={
             'question':'xyz',
             'answer': 'abc',
-            'difficulty':2,
-            'category':2
+            'difficulty':1,
+            'category':3000
         }
         res=self.client().post('/questions', json=new_ques)
         data=json.loads(res.data)
 
         self.assertEqual(res.status_code, 422)
-        self.asserEqual(data["success"], False)
-        self.asserEqual(data["message"], 'Unprocessable Entity')
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], 'Unprocessable Entity')
+
+
+    def test_deletion(self):
+        res=self.client().delete('/questions/11')
+        data=json.loads(res.data)
+        question = Question.query.filter(Question.id == 1).one_or_none()
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+
+    def test_422_deletion(self):
+        res=self.client().delete('/questions/1000')
+        data=json.loads(res.data)
+
+        self.assertEqual(res.status_code,422)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Unprocessable Entity")
 
     
     def test_search_questions(self):
@@ -103,15 +105,12 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data["success"], True)
 
     def test_422_on_search(self):
-        search={
-            'term':'10000'
-        }
-        res=self.client().post('search', json=search)
+        search={"searchTerm":"skvsjkfvc"} 
+        res= self.client().post('/search', json=search)
         data=json.loads(res.data)
-
         self.assertEqual(res.status_code,422)
-        self.assertEquall(data["success"], False)
-        self.assertEqual(data["message"],'Unprocessable Request')
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"],'Unprocessable Entity')
 
     def test_get_questionsByCategory(self):
         res=self.client().get('/categories/2/questions')
@@ -122,29 +121,33 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_playing_quizzes(self):
         info={
-            'previous_questions':[],
-            'quiz_category':{
-                'category':'History',
-                'id':4
-            }
+            "previous_questions":[],
+            "quiz_category":{
+                # 'quiz_category':['History'],
+                'id':4}
         }
-        res=self.client.post('/quizzes', json=info)
+        res=self.client().post('/play', json=info)
+        #data = json.loads(res.data.decode('utf-8'))
+        #filter_ques = Question.query.filter_by(category=4).all()
         data=json.loads(res.data)
-
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
+        #self.assertTrue('question' in data)
 
 
-    def test_400_in_quizzes(self):
+    def test_500_in_quizzes(self):
         info={
             'previous_questions':[],
+            "quiz_category":{
+                'id':10000
+            }
         }
-        res.self.client.post('/quizzes', json=info)
+        res=self.client().post('/play', json=info)
         data=json.loads(res.data)
 
-        self.assertEqual(res.status_code, 400)
-        self.asserEqual(data["success"], False)
-        self.assertEqual(data["message"], 'Bad Request')
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], 'Internal Server Error')
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
