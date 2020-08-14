@@ -41,10 +41,12 @@ def create_app(test_config=None):
   @app.route('/categories')
   def get_categories():
     try:    
-      all= list(map(Category.format,Category.query.all()))
+      categories = Category.query.all()
+      formatted = {category.id: category.type for category in categories}
       result={
         "success":True,
-        "categories":all
+        "count": 2,
+        "categories": formatted 
       }
       return jsonify(result)
     except Exception:
@@ -65,6 +67,7 @@ def create_app(test_config=None):
   def get_questions():
     all_ques=Question.query.all()
     type_ques=[question.format() for question in all_ques]
+
     total=len(type_ques)
     cur_ques=paginate(request,type_ques)
     all_cate=Category.query.all()
@@ -88,13 +91,17 @@ def create_app(test_config=None):
   @app.route('/questions/<int:id>', methods=['DELETE'])
   def del_by_id(id):
     try:
-      question_id=Question.query.filter(Question.id==id).one
+      question_id=Question.query.filter(Question.id==id).one_or_none()
+      if question_id is None:
+        abort(404)
+      
       question_id.delete()
+      
       result={
         "success":True,
-        "message":"successfully deleted"
+        "id":id
       }
-      return jsonify(result),200
+      return jsonify(result)
 
     except Exception:
       abort(422)
@@ -144,21 +151,24 @@ def create_app(test_config=None):
   '''
   @app.route('/search', methods=['POST'])
   def search_ques():
-    body=request.get_json()
-    search_term=body.get('searchTerm','')
-    try:      
-      filtered= result = Question.query.filter(Question.question.ilike('%{}%'.format(search_term))).all()
-      search=[question.format() for question in filtered]
-      result={
-        "success":True,
-        "questions":search,
-        "totalQuestions":len(search)
-      }
-
-      return jsonify(result),200
-
-    except Exception:
+    body = request.get_json()
+    search_term = body.get('searchTerm', '')
+    #if search_term in body: 
+    result = Question.question.ilike('%{}%'.format(search_term))      
+    filtered = Question.query.filter(result)
+    search = [question.format() for question in filtered]
+    print(len(search))
+    if (len(search)== 0):
       abort(422)
+    else:
+      result={
+        "success": True,
+        "questions": search,
+        "totalQuestions": len(search)
+        }
+      return jsonify(result), 200
+    
+
 
   '''
   @TODO: 
@@ -191,35 +201,43 @@ def create_app(test_config=None):
   one question at a time is displayed, the user is allowed to answer
   and shown whether they were correct or not. 
   '''
-  @app.route('/quizzes', methods=['POST', 'GET'])
-  def quiz():
-    data= request.get_json()
-    prev_questions=data.get('previous_questions',[])
-    category=data.get('quiz_category',None)
-    cate=category.get('id')
-    category_id=int(cate)
-    if (prev_questions is None) or (category is None):
-      abort(400)
-  
-    def random_ques():
-      return questions[random.randint(0,len(question)-1)]
+
+  @app.route('/play', methods=['POST'])
+  def start_quiz():
+    try:
+      data = request.get_json()
+      print(data)
+      category_id = data['quiz_category']['id']
+      category = Category.query.get(category_id)
+      previous_questions = data["previous_questions"]
+
+      if not (category_id =='0'):
+        if "previous_questions" in data and len(previous_questions) > 0:
+          print(data)
+          questions = Question.query.filter(Question.id.notin_(previous_questions), Question.category == category.id).all()
+        else:
+          print(data)
+          questions = Question.query.filter(Question.category == category.id).all()
+      else: 
+        print(data)
+        questions = Question.query.filter(Question.id.notin_(previous_questions)).all()
+        print(len(questions))
       
-    next_ques= random_ques()
-    avail=True
+      max = len(questions)
+      if max == 0:
+        question = None
+      else:
+        question = questions[random.randrange(0,max)].format()
 
-    if (next_ques in prev_questions):
-      next_ques=random_ques()
-      avail=True
-    else:
-      avail=False
+      return jsonify({
+        "success": True,
+        "question": question
+      }),200
 
-    result={
-      "success": True,
-      "question":next_ques.format()
-    }
+    except:
+      abort(500, "An error occured while trying to load the next question")
 
-    return jsonify(result),200
-  '''
+    '''
   @TODO: 
   Create error handlers for all expected errors 
   including 404 and 422. 
